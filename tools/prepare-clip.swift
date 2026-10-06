@@ -8,6 +8,8 @@ let args = CommandLine.arguments
 let inDir = args[1], outDir = args[2], clip = args[3]
 let stillFigure = Double(args[4])!, stillCanvas = Double(args[5])!
 let fps = 24.0
+/// `strict` clips (the hoverboard) have wind streaks and sparkles in the footage: drop faint stray bits, keep the board's glow.
+let strict = args.count > 6 && args[6] == "strict"
 
 struct Bitmap { var d: [UInt8]; let w: Int; let h: Int }
 
@@ -59,6 +61,27 @@ func clearFloorHaze(_ bmp: inout Bitmap) {
     for p in clear { bmp.d[p * 4] = 0; bmp.d[p * 4 + 1] = 0; bmp.d[p * 4 + 2] = 0; bmp.d[p * 4 + 3] = 0 }
 }
 
+/// Strict clips: keeps see-through pixels only when solid pixels are within a few pixels (the board's glow),
+/// so wind streaks and sparkles floating nearby disappear.
+func dropDetached(_ bmp: inout Bitmap, radius: Int = 5) {
+    let w = bmp.w, h = bmp.h
+    var solid = [UInt8](repeating: 0, count: w * h)
+    for p in 0..<(w * h) where bmp.d[p * 4 + 3] >= 230 { solid[p] = 1 }
+    var horiz = [UInt8](repeating: 0, count: w * h)
+    for y in 0..<h { for x in 0..<w {
+        var hit: UInt8 = 0
+        for dx in -radius...radius { let nx = x + dx; if nx >= 0, nx < w, solid[y * w + nx] == 1 { hit = 1; break } }
+        horiz[y * w + x] = hit
+    } }
+    for y in 0..<h { for x in 0..<w {
+        let p = y * w + x
+        guard bmp.d[p * 4 + 3] > 0, solid[p] == 0 else { continue }
+        var near = false
+        for dy in -radius...radius { let ny = y + dy; if ny >= 0, ny < h, horiz[ny * w + x] == 1 { near = true; break } }
+        if !near { bmp.d[p * 4] = 0; bmp.d[p * 4 + 1] = 0; bmp.d[p * 4 + 2] = 0; bmp.d[p * 4 + 3] = 0 }
+    } }
+}
+
 /// Takes the green tint off the outline: pixels within two of the edge lose their excess green.
 func despillEdges(_ bmp: inout Bitmap) {
     let w = bmp.w, h = bmp.h
@@ -80,7 +103,7 @@ func despillEdges(_ bmp: inout Bitmap) {
 /// Keeps the figure and anything it is holding. Connectivity uses a low alpha threshold so a see-through
 /// bottle stays attached to the hand; watermark sparkles and specks elsewhere are dropped.
 func keepLargest(_ bmp: inout Bitmap) {
-    let w = bmp.w, h = bmp.h, thr: UInt8 = 12
+    let w = bmp.w, h = bmp.h, thr: UInt8 = strict ? 70 : 12
     var label = [Int32](repeating: 0, count: w * h)
     var sizes: [Int] = [0]
     var stack: [Int] = []
@@ -156,7 +179,8 @@ var frames: [Frame] = []
 for n in names {
     var bmp = load(inDir + "/" + n)
     key(&bmp)
-    clearFloorHaze(&bmp)
+    if !strict { clearFloorHaze(&bmp) }
+    if strict { dropDetached(&bmp) }
     keepLargest(&bmp)
     despillEdges(&bmp)
     frames.append(measure(bmp))

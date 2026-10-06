@@ -135,12 +135,26 @@ final class WalkModel: ObservableObject {
     var walkedBefore: CGFloat = 0
     static let ramp = 0.35   // seconds to get up to speed / to come to a stop
 
-    var moveDuration: Double { max(Double(moveDistance / Walker.speed) + Self.ramp, Self.ramp * 2) }
+    /// Hoverboard exit: a short hold while the board appears, then a fast, accelerating dash.
+    var boarding = false
+    var boardStart = Date()
+    static let boardHold = 0.25          // seconds before it starts moving
+    static let boardSpeed: CGFloat = 1500   // points per second, average over the dash
+
+    var moveDuration: Double {
+        if boarding { return Self.boardHold + max(0.7, Double(moveDistance / Self.boardSpeed)) }
+        return max(Double(moveDistance / Walker.speed) + Self.ramp, Self.ramp * 2)
+    }
 
     /// Distance covered in the current segment: steady pace with a short ease at each end.
     func segmentDistance(at date: Date) -> CGFloat {
         let T = moveDuration
         let u = min(max(date.timeIntervalSince(moveStart) / T, 0), 1)
+        if boarding {
+            let h = Self.boardHold / T
+            let x = max(0, (u - h) / (1 - h))
+            return moveDistance * CGFloat(pow(x, 2.0))      // pushes off gently, then speeds up
+        }
         let r = min(Self.ramp / T, 0.5)
         let p: Double
         if u < r { p = u * u / (2 * r * (1 - r)) }
@@ -388,6 +402,11 @@ final class Skin: ObservableObject {
         let ch = 230 * scale
         return CGPoint(x: (ch * peekVisible - ch / 2) * sin(sideAngle * .pi / 180), y: ch * 0.52)
     }
+    /// How it leaves after a walk-in reminder: "board" (hoverboard dash, when the character has one) or "walk".
+    @Published var exitStyle: String = UserDefaults.standard.string(forKey: "exitStyle") ?? "board" {
+        didSet { UserDefaults.standard.set(exitStyle, forKey: "exitStyle") }
+    }
+    var hasHoverboard: Bool { ClipStore.shared.clips["hoverboard"] != nil }
     @Published var autoLeave: Bool = UserDefaults.standard.bool(forKey: "autoLeave") {
         didSet { UserDefaults.standard.set(autoLeave, forKey: "autoLeave") }
     }
@@ -924,9 +943,10 @@ struct Character: View {
     var walked: (Date) -> CGFloat = { CGFloat($0.timeIntervalSinceReferenceDate) * Walker.speed }
     var facingLeft = false
     var hang = false
+    var boardStart: Date? = nil
     var body: some View {
         // amount eases between 0 (standing) and 1 (walking) so the stride blends in and out
-        CharacterPose(amount: walking ? 1 : 0, action: action, since: since, walked: walked, facingLeft: facingLeft, hang: hang)
+        CharacterPose(amount: walking ? 1 : 0, action: action, since: since, walked: walked, facingLeft: facingLeft, hang: hang, boardStart: boardStart)
             .animation(.easeInOut(duration: 0.4), value: walking)
     }
 }
@@ -1077,6 +1097,7 @@ struct CharacterPose: View, Animatable {
     var walked: (Date) -> CGFloat
     var facingLeft = false
     var hang = false
+    var boardStart: Date? = nil
     @ObservedObject var skin = Skin.shared
 
     var animatableData: Double {
@@ -1091,6 +1112,12 @@ struct CharacterPose: View, Animatable {
             let stride = skin.sprites.isEmpty ? CharacterSide.stride : (skin.walkSeq.isEmpty ? SpriteCharacter.stride : skin.walkStride)
             let phase = 2 * .pi * Double(walked(ctx.date) / (stride * skin.scale))
             let idle = skin.sprites.isEmpty ? sin(t * 2) * 1.5 * (1 - amount) : 0
+            // hoverboard exit: the action pose fades into the filmed board clip, which then plays as the window dashes off
+            let tb = boardStart.map { ctx.date.timeIntervalSince($0) } ?? -1
+            let fade = tb < 0 ? 0 : min(1, tb / 0.22)
+            let clip = ClipStore.shared.clips["hoverboard"]
+            let boardImg: NSImage? = (tb >= 0 && clip != nil) ? ClipStore.shared.frame("hoverboard", (clip!.start + Int(tb * clip!.fps)) % clip!.frames) : nil
+            ZStack {
             Group {
                 if !skin.sprites.isEmpty {
                     SpriteCharacter(t: max(0, ctx.date.timeIntervalSince(since)), phase: phase, walking: amount > 0.5,
@@ -1110,6 +1137,14 @@ struct CharacterPose: View, Animatable {
                 }
             }
             .scaleEffect(x: skin.image == nil ? 0.75 + 0.25 * abs(2 * amount - 1) : 1, y: 1, anchor: .bottom)
+            .opacity(boardImg == nil ? 1 : 1 - fade)
+            if let boardImg {
+                Image(nsImage: boardImg).resizable().interpolation(.high).scaledToFit()
+                    .frame(height: 230).fixedSize()
+                    .scaleEffect(x: facingLeft ? -1 : 1, y: 1)
+                    .opacity(fade)
+            }
+            }
             .offset(y: -idle)
             .frame(width: 170, height: 230)
             .scaleEffect(skin.scale, anchor: .bottom)
@@ -1280,7 +1315,8 @@ struct OverlayView: View {
                 Bubble(model: model).frame(maxWidth: 290).transition(.scale.combined(with: .opacity))
             }
             Character(walking: model.walking, action: model.action, since: model.stoppedAt,
-                      walked: { [model] in model.walked(at: $0) }, facingLeft: model.facingLeft)
+                      walked: { [model] in model.walked(at: $0) }, facingLeft: model.facingLeft,
+                      boardStart: model.boarding ? model.boardStart : nil)
         }
         .padding(.bottom, 6)
         .frame(width: skin.panelSize.width, height: skin.panelSize.height)
@@ -1357,6 +1393,7 @@ final class Walker: NSObject {
         model.showBubble = false
         model.walking = true
         model.facingLeft = false
+        model.boarding = false
         model.walkedBefore = 0
         model.moveDistance = 0
         leaving = false
@@ -1444,7 +1481,14 @@ final class Walker: NSObject {
         autoWork = nil
         model.showBubble = false
         model.facingLeft = endX < panel.frame.origin.x
-        model.walking = true
+        if Skin.shared.exitStyle == "board" && Skin.shared.hasHoverboard && !model.peeking {
+            model.boarding = true
+            model.boardStart = Date()
+            model.walking = false          // keep the action pose until it fades into the board
+        } else {
+            model.boarding = false
+            model.walking = true
+        }
         move(to: endX, y: y) { [weak self] in
             self?.panel.orderOut(nil)
             done()
@@ -1900,6 +1944,15 @@ struct SettingsView: View {
                         Text("Back left").tag("left")
                         Text("On right").tag("right")
                     }.pickerStyle(.segmented).labelsHidden().frame(width: 200)
+                }
+                if skin.hasHoverboard {
+                    SettingRow(icon: "wind", tint: .cyan, title: "Leaves by",
+                               note: skin.exitStyle == "board" ? "Hops on a hoverboard and zooms off" : "Walks off") {
+                        Picker("", selection: $skin.exitStyle) {
+                            Text("Hoverboard").tag("board")
+                            Text("Walking").tag("walk")
+                        }.pickerStyle(.segmented).labelsHidden().frame(width: 200)
+                    }
                 }
                 SettingRow(icon: "hare.fill", tint: .green, title: "Walk speed",
                            note: skin.walkPace < 0.95 ? "Strolling" : skin.walkPace <= 1.1 ? "Natural pace"

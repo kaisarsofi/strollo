@@ -22,6 +22,7 @@ Notifications are easy to ignore. A little character who strolls in, holds up a 
 ## Features
 
 - **Real animations, not a pop-up.** The built-in character walks in with a filmed walk cycle and then acts out the reminder: sipping from a bottle, stretching (arms up, side bends, shoulder rolls), looking left and right and covering its eyes, or waving.
+- **A hoverboard getaway.** After you answer, the buddy hops on a glowing hoverboard and zooms off across the screen in about a second and a half (or just walks off, if you prefer).
 - **Walk in or peek in.** It can stroll in along the bottom of the screen, or peek in from any of 8 spots (corners and edges), or pick one at random each time.
 - **Fully configurable.** Edit the messages, intervals, button labels and animation for every reminder; choose where it stops and which way it leaves; set the walk speed; decide whether it waits for your click or goes away by itself and comes back later.
 - **Two built-in characters, or bring your own.** A 3D kid (default) and a drawn buddy, plus support for your own pose images and filmed clips.
@@ -83,9 +84,14 @@ In **Settings → Character → Add…** choose either:
 - **A single image**: any PNG with a transparent background. It bobs and sways as it walks.
 - **A pose folder**: transparent PNGs named `walk1`, `walk2`, `wave`, `drink1`, `drink2`, `stretch1`, `stretch2`, `eyes` and `idle`, which the app switches between. Optional extras (`walk3`, `walk4`, `drink3`, `eye2`, `eye3`, `shoulders`, `hang`) make the animations smoother.
 
-For the smoothest result, film each action as a short green-screen video (an AI video tool works) and convert it to frames with the helpers in [`tools/`](tools): `prepare-character.swift` for stills, `prepare-walk.swift` for a walk-in-place cycle and `prepare-clip.swift` for drink, stretch, eyes and wave clips.
+For the smoothest result, film each action as a short green-screen video (an AI video tool works) and convert it to frames with the helpers in [`tools/`](tools): `prepare-character.swift` for stills, `prepare-walk.swift` for a walk-in-place cycle and `prepare-clip.swift` for drink, stretch, eyes, wave and hoverboard clips.
 
 ## Release notes
+
+### v1.1.0
+
+- New: a hoverboard exit. After you answer, the character hops on a hoverboard and dashes across the screen. Choose "Hoverboard" or "Walking" under Settings → Behaviour → Leaves by.
+- Version number and download size updated (the app grew by about 10 MB for the board footage).
 
 ### v1.0.0
 
