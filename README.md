@@ -57,11 +57,15 @@ Notifications are easy to ignore. A little character who strolls in, holds up a 
 
 1. **[Download Strollo.dmg](https://github.com/kaisarsofi/strollo/releases/latest/download/Strollo.dmg)** and open it.
 2. Drag **Strollo** onto the **Applications** shortcut in the window. (A `Strollo.zip` is on the [releases page](https://github.com/kaisarsofi/strollo/releases/latest) too, if you prefer it.)
-3. **First launch:** the app isn't notarized by Apple (that needs a paid developer account), so macOS will say it can't verify it. Right-click the app and choose **Open**, then **Open** again. If macOS still refuses, run this once in Terminal:
+3. **First launch:** Strollo isn't notarized by Apple (that needs a paid developer account), so macOS will say it can't verify it's free of malware. The app is open source and you can read or build every line. To allow it:
+   - Open **System Settings → Privacy & Security**, scroll to the **Security** section, and click **Open Anyway** next to "Strollo was blocked". Confirm with your password or Touch ID.
+   - Or, in Terminal, run this once:
 
-   ```bash
-   xattr -dr com.apple.quarantine /Applications/Strollo.app
-   ```
+     ```bash
+     xattr -dr com.apple.quarantine /Applications/Strollo.app
+     ```
+
+   (On macOS 14 and earlier, right-clicking the app and choosing **Open** also works.)
 4. Look for the walking-figure icon in the menu bar. Choose **Settings…** to make it yours.
 
 Requires macOS 13 (Ventura) or newer.

@@ -9,7 +9,7 @@ NSGraphicsContext.saveGraphicsState()
 NSGraphicsContext.current = NSGraphicsContext(cgContext: ctx, flipped: false)
 let title = NSAttributedString(string: "Drag Strollo to Applications", attributes: [.font: NSFont.systemFont(ofSize: 22, weight: .semibold), .foregroundColor: NSColor(red: 0.15, green: 0.22, blue: 0.45, alpha: 1)])
 title.draw(at: NSPoint(x: (CGFloat(W) - title.size().width) / 2, y: 330))
-let sub = NSAttributedString(string: "then right-click it and choose Open the first time", attributes: [.font: NSFont.systemFont(ofSize: 13), .foregroundColor: NSColor(red: 0.3, green: 0.38, blue: 0.6, alpha: 1)])
+let sub = NSAttributedString(string: "If macOS blocks it: System Settings > Privacy & Security > Open Anyway", attributes: [.font: NSFont.systemFont(ofSize: 13), .foregroundColor: NSColor(red: 0.3, green: 0.38, blue: 0.6, alpha: 1)])
 sub.draw(at: NSPoint(x: (CGFloat(W) - sub.size().width) / 2, y: 304))
 NSGraphicsContext.restoreGraphicsState()
 // arrow
