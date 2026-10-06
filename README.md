@@ -6,7 +6,12 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/kaisarsofi/strollo/releases/latest"><img alt="Download" src="https://img.shields.io/github/downloads/kaisarsofi/strollo/total?label=downloads&color=4c8bf5"></a>
+  <a href="https://github.com/kaisarsofi/strollo/releases/latest/download/Strollo.dmg"><img alt="Download Strollo for macOS" src="https://img.shields.io/badge/%E2%AC%87%20Download%20for%20macOS-Strollo.dmg-4c8bf5?style=for-the-badge"></a>
+</p>
+<p align="center"><sub>Free · macOS 13+ · <a href="#install">install notes</a> · <a href="https://github.com/kaisarsofi/strollo/releases">all releases</a></sub></p>
+
+<p align="center">
+  <a href="https://github.com/kaisarsofi/strollo/releases/latest"><img alt="Downloads" src="https://img.shields.io/github/downloads/kaisarsofi/strollo/total?label=downloads&color=4c8bf5"></a>
   <a href="https://github.com/kaisarsofi/strollo/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/kaisarsofi/strollo?color=f5c542"></a>
   <img alt="macOS 13+" src="https://img.shields.io/badge/macOS-13%2B-black">
   <img alt="Swift" src="https://img.shields.io/badge/Swift-5.9-orange">
@@ -50,8 +55,8 @@ Notifications are easy to ignore. A little character who strolls in, holds up a 
 
 ## Install
 
-1. Download `Strollo.zip` from the [latest release](https://github.com/kaisarsofi/strollo/releases/latest) and unzip it.
-2. Drag **Strollo.app** to your Applications folder.
+1. **[Download Strollo.dmg](https://github.com/kaisarsofi/strollo/releases/latest/download/Strollo.dmg)** and open it.
+2. Drag **Strollo** onto the **Applications** shortcut in the window. (A `Strollo.zip` is on the [releases page](https://github.com/kaisarsofi/strollo/releases/latest) too, if you prefer it.)
 3. **First launch:** the app isn't notarized by Apple (that needs a paid developer account), so macOS will say it can't verify it. Right-click the app and choose **Open**, then **Open** again. If macOS still refuses, run this once in Terminal:
 
    ```bash
@@ -91,6 +96,7 @@ For the smoothest result, film each action as a short green-screen video (an AI 
 ### v1.1.0
 
 - New: a hoverboard exit. After you answer, the character hops on a hoverboard and dashes across the screen. Choose "Hoverboard" or "Walking" under Settings → Behaviour → Leaves by.
+- Now also available as a `Strollo.dmg` with a drag-to-Applications window.
 - Version number and download size updated (the app grew by about 10 MB for the board footage).
 
 ### v1.0.0
